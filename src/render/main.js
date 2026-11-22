@@ -5,9 +5,10 @@ import { GameEngine } from '../core/engine.js';
 // ==========================================
 // 1. ÂM THANH WEB AUDIO API (Không cần asset ngoài)
 // ==========================================
-const settings = JSON.parse(localStorage.getItem('ddl_settings') || '{"vol":0.5,"sens":0.3}');
+const settings = JSON.parse(localStorage.getItem('ddl_settings') || '{"vol":0.5,"sens":0.3,"cb":false}');
 document.getElementById('opt-vol').value = settings.vol;
 document.getElementById('opt-sens').value = settings.sens;
+document.getElementById('opt-cb').checked = !!settings.cb;
 
 let audioCtx = null;
 function playTone(freq, type = 'sine', dur = 0.15, slideTo = null) {
@@ -190,9 +191,9 @@ let camYawDeg = 0;
 let lastSecInt = 999;
 
 const STORIES = {
-  1: { title: 'Đêm 1 — Đảo Bến', quote: 'Ông Đăng: "Sương đen đã nuốt trọn Đảo Bến rồi cháu ơi. Hãy gom những đốm sáng đom đóm, thắp lại 5 ngọn Đèn Lồng Lớn trước khi ngọn lửa tắt."' },
-  2: { title: 'Đêm 2 — Đảo Cau', quote: 'Ông Đăng: "Hai bờ Đảo Cau nối nhau bằng chiếc cầu tre mảnh. Coi chừng lũ Gió Lạc ranh ma chuyên rình cướp ánh sáng của cháu!"' },
-  3: { title: 'Đêm 3 — Đảo Chuông', quote: 'Ông Đăng: "Đêm cuối trên Đảo Chuông ba tầng gió lộng. Hãy vững bước vượt dốc cao, thắp sáng đỉnh tháp để đón bình minh!"' }
+  1: { title: 'Đêm 1 — Đảo Bến', quote: 'Ông Đăng: "Sương đen đã nuốt trọn Đảo Bến rồi cháu ơi. Hãy giữ ít nhất 3 ngọn Đèn Lồng Lớn sáng tới bình minh!"' },
+  2: { title: 'Đêm 2 — Đảo Cau', quote: 'Ông Đăng: "Hai bờ Đảo Cau nối nhau bằng chiếc cầu tre mảnh. Coi chừng lũ Gió Lạc ranh ma và Bóng Mực hút dầu đèn!"' },
+  3: { title: 'Đêm 3 — Đảo Chuông', quote: 'Ông Đăng: "Đêm cuối trên Đảo Chuông ba tầng gió lộng. Hãy giữ ít nhất 5/7 đèn sáng cho tới lúc mặt trời mọc!"' }
 };
 
 function showScreen(id) {
@@ -239,11 +240,12 @@ window.openSettings = (from) => {
 window.closeSettings = () => {
   settings.vol = parseFloat(document.getElementById('opt-vol').value);
   settings.sens = parseFloat(document.getElementById('opt-sens').value);
+  settings.cb = document.getElementById('opt-cb').checked;
   localStorage.setItem('ddl_settings', JSON.stringify(settings));
   showScreen(prevUiState);
 };
 
-// Tạo 10 ô hiển thị đom đóm ở HUD dưới
+// Tạo sẵn 10 ô hiển thị đom đóm ở HUD dưới
 const slotsEl = document.getElementById('mote-slots');
 for (let i = 0; i < 10; i++) {
   const d = document.createElement('div');
@@ -286,7 +288,7 @@ function animate(now) {
   if (uiState === 'playing') {
     acc += dt;
     if (keys['KeyQ']) camYawDeg += 120 * dt;
-    if (keys['KeyE']) camYawDeg -= 120 * dt;
+    if (keys['KeyC']) camYawDeg -= 120 * dt; // Dùng Q/C xoay camera để phím E chuyên dùng nạp đèn
 
     while (acc >= 1 / 60) {
       acc -= 1 / 60;
@@ -305,9 +307,9 @@ function animate(now) {
         const evs = engine.step(input, prevInput);
         for (const ev of evs) {
           if (ev.name === 'mote_picked' || ev.name === 'charm_picked') SFX.pick();
-          else if (ev.name === 'lantern_lit') SFX.lit();
+          else if (ev.name === 'lantern_lit' || ev.name === 'refuel') SFX.lit();
           else if (ev.name === 'pulse') SFX.pulse();
-          else if (ev.name === 'player_hit') SFX.hit();
+          else if (ev.name === 'player_hit' || ev.name === 'lantern_out') SFX.hit();
           else if (ev.name === 'dash') SFX.dash();
           else if (ev.name === 'shade_spawned') SFX.spawn();
           else if (ev.name === 'game_over') {
@@ -321,13 +323,13 @@ function animate(now) {
                 btns.innerHTML = `<button onclick="startStory(${currentNight + 1})">Sang Đêm ${currentNight + 1}</button>`;
               } else {
                 document.getElementById('end-title').textContent = '🌞 BÌNH MINH TRÊN ĐẢO ĐÈN LỒNG!';
-                document.getElementById('end-desc').textContent = `Chúc mừng bạn đã thắp sáng cả 3 hòn đảo! Tổng điểm chiến dịch: ${totalCampaignScore}`;
+                document.getElementById('end-desc').textContent = `Chúc mừng bạn đã giữ ánh sáng qua cả 3 Đêm! Tổng điểm: ${totalCampaignScore}`;
                 btns.innerHTML = `<button onclick="goMenu()">Về Menu chính</button>`;
               }
             } else {
               SFX.lose();
               document.getElementById('end-title').textContent = '🌑 Sương Đen Bao Phủ...';
-              document.getElementById('end-desc').textContent = `Lý do: ${ev.data.reason === 'no_flames' ? 'Hết Ngọn Lửa' : 'Hết thời gian trước bình minh'}`;
+              document.getElementById('end-desc').textContent = `Lý do: ${ev.data.reason === 'no_flames' ? 'Hết Ngọn Lửa' : 'Không đủ số đèn sáng lúc bình minh'}`;
               document.getElementById('end-buttons').innerHTML = `<button onclick="restartNight()">Chơi lại Đêm ${currentNight}</button><button class="secondary" onclick="goMenu()">Về Menu</button>`;
             }
             showScreen('end');
@@ -354,20 +356,34 @@ function animate(now) {
   let litCount = 0;
   let nearestUnlit = null;
   let nearestDist = Infinity;
+  let interactTarget = null;
+  let interactMinDist = Infinity;
+
   for (const l of engine.lanterns) {
     const obj = lanternMeshes.get(l.id);
     if (!obj) continue;
+    const fuel = l.fuelTicks / 60;
+    const d = Math.hypot(engine.player.pos[0] - l.pos[0], engine.player.pos[2] - l.pos[2]);
+
     if (l.lit) {
       litCount++;
-      obj.bulb.material.color.set('#FFE9B0');
-      obj.bulb.material.emissive.set('#FFB347');
-      obj.light.intensity = 15;
+      obj.bulb.scale.set(1, 1, 1); // Phình đủ kích thước
+      const isLow = fuel < 30;
+      const blinkOn = !isLow || Math.sin(now * 0.00628) > 0; // Nhấp nháy 1 Hz khi fuel < 30
+      obj.bulb.material.color.set(blinkOn ? '#FFE9B0' : '#5B5F6E');
+      obj.bulb.material.emissive.set(blinkOn ? '#FFB347' : '#000000');
+      obj.light.intensity = blinkOn ? 15 : 2;
+      if (l.fuelTicks < 6000 && d <= 2.0 && d < interactMinDist) {
+        interactMinDist = d;
+        interactTarget = l;
+      }
     } else {
+      obj.bulb.scale.set(1.1, 0.8, 1.1); // Đèn tắt bị xẹp 20% chiều cao
       obj.bulb.material.color.set('#5B5F6E');
       obj.bulb.material.emissive.set('#000000');
       obj.light.intensity = 0;
-      const d = Math.hypot(engine.player.pos[0] - l.pos[0], engine.player.pos[2] - l.pos[2]);
       if (d < nearestDist) { nearestDist = d; nearestUnlit = l; }
+      if (d <= 2.0 && d < interactMinDist) { interactMinDist = d; interactTarget = l; }
     }
   }
   hemiLight.intensity = 0.15 + 0.55 * (litCount / Math.max(1, engine.lanterns.length));
@@ -390,7 +406,8 @@ function animate(now) {
   syncPool(engine.shades, shadeMeshes,
     () => new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), new THREE.MeshStandardMaterial({ color: '#120A1A', emissive: '#7A3CFF', emissiveIntensity: 0.7 })),
     (mesh, s) => {
-      mesh.material.emissive.set(s.state === 'stunned' ? '#3A3450' : '#7A3CFF');
+      const activeColor = settings.cb ? '#00B3FF' : '#7A3CFF';
+      mesh.material.emissive.set(s.state === 'stunned' ? '#3A3450' : activeColor);
       mesh.position.set(s.pos[0], s.pos[1] + 0.8, s.pos[2]);
     }
   );
@@ -413,17 +430,33 @@ function animate(now) {
     const mm = String(Math.floor(engine.timeLeftS / 60)).padStart(2, '0');
     const ss = String(Math.floor(engine.timeLeftS % 60)).padStart(2, '0');
     const timeEl = document.getElementById('hud-time');
-    timeEl.textContent = `${mm}:${ss}`;
-    timeEl.classList.toggle('danger-blink', engine.timeLeftS <= 30);
+    const isDanger = engine.timeLeftS <= 30;
+    timeEl.textContent = (isDanger && settings.cb ? '⚠ ' : '') + `${mm}:${ss}`;
+    timeEl.classList.toggle('danger-blink', isDanger && !settings.cb);
+    timeEl.classList.toggle('cb-warn', isDanger && settings.cb);
 
-    document.getElementById('hud-lanterns').textContent = `🏮 Đèn: ${litCount}/${engine.lanterns.length}`;
+    const reqLit = Math.ceil(0.6 * engine.lanterns.length);
+    document.getElementById('hud-lanterns').textContent = `🏮 Đèn: ${litCount}/${engine.lanterns.length} (Cần ${reqLit})`;
     document.getElementById('hud-score').textContent = `Điểm: ${engine.score}`;
     document.getElementById('hud-charm').textContent = engine.player.charmTicks > 0 ? `🧧 Bùa Gió: ${(engine.player.charmTicks / 60).toFixed(1)}s` : '';
-    document.getElementById('wind-warn').style.display = engine.wind.warnTicks > 0 || engine.wind.active ? 'block' : 'none';
 
-    document.getElementById('hud-mote-text').textContent = `Đom đóm: ${engine.player.carried} / 10`;
+    const windEl = document.getElementById('wind-warn');
+    windEl.style.display = engine.wind.warnTicks > 0 || engine.wind.active ? 'block' : 'none';
+    windEl.style.color = settings.cb ? '#FFFFFF' : '#FF5A5F';
+    windEl.textContent = (settings.cb ? '⚠ ' : '🍃 ') + 'Gió mạnh sắp thổi!';
+
+    const cap = engine.getCapacity();
+    document.getElementById('hud-mote-text').textContent = `Đom đóm: ${engine.player.carried} / ${cap}`;
+    if (slotsEl.children.length !== cap) {
+      slotsEl.innerHTML = '';
+      for (let i = 0; i < cap; i++) {
+        const d = document.createElement('div');
+        d.className = 'slot';
+        slotsEl.appendChild(d);
+      }
+    }
     const slotDivs = slotsEl.children;
-    for (let i = 0; i < 10; i++) slotDivs[i].classList.toggle('filled', i < engine.player.carried);
+    for (let i = 0; i < cap; i++) slotDivs[i].classList.toggle('filled', i < engine.player.carried);
 
     const dashCd = engine.player.dashCdTicks / 60;
     document.getElementById('cd-dash').textContent = dashCd > 0 ? `Shift: Lướt (${dashCd.toFixed(1)}s)` : 'Shift: Lướt (Sẵn sàng)';
@@ -431,9 +464,14 @@ function animate(now) {
     document.getElementById('cd-pulse').textContent = pulseCd > 0 ? `R: Tỏa Sáng (${pulseCd.toFixed(1)}s)` : 'R: Tỏa Sáng (3✨)';
 
     const promptEl = document.getElementById('prompt-interact');
-    if (nearestUnlit && nearestDist <= 2.0) {
+    if (interactTarget) {
       promptEl.style.display = 'block';
-      promptEl.textContent = `F/E — Nạp ánh sáng (${nearestUnlit.deposited}/10)`;
+      if (!interactTarget.lit) {
+        const req = interactTarget.everLit ? 5 : 10;
+        promptEl.textContent = `E — Thắp đèn (${interactTarget.deposited}/${req})`;
+      } else {
+        promptEl.textContent = `E — Châm dầu (Dầu: ${(interactTarget.fuelTicks / 60).toFixed(0)}/100)`;
+      }
     } else {
       promptEl.style.display = 'none';
     }
