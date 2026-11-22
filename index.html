@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Đảo Đèn Lồng - Phase 1</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #0E1430; font-family: sans-serif; color: #F5F1E6; }
+    #hud {
+      position: absolute; top: 16px; left: 16px; right: 16px;
+      display: flex; justify-content: space-between; pointer-events: none;
+      font-size: 18px; font-weight: bold; text-shadow: 0 2px 4px #000;
+    }
+    #bottom-hud {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      text-align: center; pointer-events: none; font-size: 18px;
+    }
+    #overlay {
+      position: absolute; inset: 0; background: rgba(14, 20, 48, 0.85);
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; text-align: center;
+    }
+    button {
+      padding: 12px 28px; font-size: 18px; font-weight: bold; cursor: pointer;
+      background: #FFB347; color: #120A1A; border: none; border-radius: 8px;
+    }
+    button:hover { background: #FFE9B0; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div id="hud-flames">🔥 Ngọn Lửa: 3</div>
+    <div id="hud-time">⏱ 05:00</div>
+    <div id="hud-score">🏮 Đèn: 0/5 | ⭐ Điểm: 0</div>
+  </div>
+  <div id="bottom-hud">
+    <div id="hud-motes">✨ Đom đóm: 0 / 10</div>
+    <div style="font-size: 14px; opacity: 0.85; margin-top: 6px;">
+      WASD / Mũi tên: Di chuyển | Q/E hoặc Chuột trái kéo: Xoay camera | Space: Nhảy | F: Nạp đèn | R: Tỏa Sáng (tốn 3 ✨)
+    </div>
+  </div>
+  <div id="overlay">
+    <h1 id="end-title">Chiến Thắng!</h1>
+    <p id="end-desc"></p>
+    <button id="btn-restart">Chơi lại</button>
+  </div>
+  <script type="module" src="/src/render/main.js"></script>
+</body>
+</html>

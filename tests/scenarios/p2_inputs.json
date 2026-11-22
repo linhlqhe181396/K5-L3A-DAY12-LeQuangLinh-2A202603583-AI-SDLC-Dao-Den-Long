@@ -1,0 +1,48 @@
+{
+  "frames": [
+    {
+      "tick": 0,
+      "move": [
+        0,
+        1
+      ],
+      "cam_yaw_deg": 0,
+      "dash": true
+    },
+    {
+      "tick": 1,
+      "dash": false
+    },
+    {
+      "tick": 40,
+      "move": [
+        0,
+        0
+      ]
+    },
+    {
+      "tick": 70,
+      "pulse": true
+    },
+    {
+      "tick": 71,
+      "pulse": false
+    },
+    {
+      "tick": 80,
+      "pause": true
+    },
+    {
+      "tick": 81,
+      "pause": false
+    },
+    {
+      "tick": 90,
+      "pause": true
+    },
+    {
+      "tick": 91,
+      "pause": false
+    }
+  ]
+}

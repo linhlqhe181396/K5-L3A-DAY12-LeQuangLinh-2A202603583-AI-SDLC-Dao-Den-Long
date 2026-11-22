@@ -1,0 +1,1 @@
+cơ chế gió mạnh Đêm 3 thổi từ tick 1800, 3600
